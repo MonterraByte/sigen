@@ -50,6 +50,9 @@ struct Args {
     /// Path to the initramfs file(s) to include
     #[structopt(short, long)]
     initrd: Vec<PathBuf>,
+    /// Make a backup of the previous output if it exists
+    #[structopt(short, long)]
+    backup: Option<PathBuf>,
     /// Overwrite output file if it already exists
     #[structopt(short = "f", long = "force")]
     overwrite: bool,
@@ -98,14 +101,29 @@ fn main(args: Args) -> io::Result<()> {
     let merged_initrd = merged_initrd.into_temp_path();
     let merged_initrd_path = merged_initrd.keep()?;
 
-    if args.output.exists() {
-        if args.overwrite {
-            fs::remove_file(&args.output)?
-        } else {
-            return Err(io::Error::new(
-                io::ErrorKind::AlreadyExists,
-                "Output file already exists, pass -f to overwrite",
-            ));
+    if args.output.is_file() {
+        match args.backup {
+            Some(path) => {
+                if path.is_file() && !args.overwrite {
+                    return Err(io::Error::new(
+                        io::ErrorKind::AlreadyExists,
+                        "Backup file already exists, pass -f to overwrite",
+                    ));
+                }
+
+                fs::copy(&args.output, &path)?;
+                fs::remove_file(&args.output)?;
+            }
+            None => {
+                if args.overwrite {
+                    fs::remove_file(&args.output)?;
+                } else {
+                    return Err(io::Error::new(
+                        io::ErrorKind::AlreadyExists,
+                        "Output file already exists, pass -f to overwrite",
+                    ));
+                }
+            }
         }
     }
 
