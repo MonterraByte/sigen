@@ -53,6 +53,9 @@ struct Args {
     /// Make a backup of the previous output if it exists
     #[structopt(short, long)]
     backup: Option<PathBuf>,
+    /// Path to the .key and .crt files (in this order) to sign the executable with
+    #[structopt(short, long, number_of_values = 2)]
+    sign: Option<Vec<PathBuf>>,
     /// Overwrite output file if it already exists
     #[structopt(short = "f", long = "force")]
     overwrite: bool,
@@ -67,6 +70,27 @@ fn main(args: Args) -> io::Result<()> {
             io::ErrorKind::NotFound,
             format!("Failed to find stub {}", STUB_PATH),
         ));
+    }
+
+    if let Some(ref v) = args.sign {
+        let key = &v[0];
+        let crt = &v[1];
+
+        if !key.is_file() {
+            return Err(io::Error::new(
+                io::ErrorKind::NotFound,
+                format!("Failed to find key {}", key.display()),
+            ));
+        }
+
+        if !crt.is_file() {
+            return Err(io::Error::new(
+                io::ErrorKind::NotFound,
+                format!("Failed to find crt {}", crt.display()),
+            ));
+        }
+
+        Command::new("sbsign").arg("-V").status()?;
     }
 
     Command::new("objcopy").arg("-V").status()?;
@@ -175,22 +199,74 @@ fn main(args: Args) -> io::Result<()> {
 
     match command.status() {
         Ok(status) => {
-            if status.success() {
-                println!(" done\nExecutable creation successful.");
-                fs::remove_file(merged_initrd_path)
-            } else {
+            if !status.success() {
                 match status.code() {
-                    Some(code) => Err(io::Error::new(
-                        io::ErrorKind::Other,
-                        format!("objcopy terminated with code {}", code),
-                    )),
-                    None => Err(io::Error::new(
-                        io::ErrorKind::Other,
-                        "objcopy terminated by signal",
-                    )),
+                    Some(code) => {
+                        return Err(io::Error::new(
+                            io::ErrorKind::Other,
+                            format!("objcopy terminated with code {}", code),
+                        ))
+                    }
+                    None => {
+                        return Err(io::Error::new(
+                            io::ErrorKind::Other,
+                            "objcopy terminated by signal",
+                        ))
+                    }
                 }
             }
         }
-        Err(err) => Err(err),
+        Err(err) => return Err(err),
     }
+
+    println!(" done");
+    fs::remove_file(merged_initrd_path)?;
+
+    if let Some(v) = args.sign {
+        print!("Signing executable...");
+        io::stdout().flush()?;
+
+        let key = &v[0];
+        let crt = &v[1];
+
+        let mut sign_command = Command::new("sbsign");
+        sign_command.args(&[
+            os!("--key"),
+            key.as_os_str(),
+
+            os!("--cert"),
+            crt.as_os_str(),
+
+            os!("--output"),
+            args.output.as_os_str(),
+
+            args.output.as_os_str(),
+        ]);
+
+        match sign_command.status() {
+            Ok(status) => {
+                if !status.success() {
+                    match status.code() {
+                        Some(code) => {
+                            return Err(io::Error::new(
+                                io::ErrorKind::Other,
+                                format!("sbsign terminated with code {}", code),
+                            ))
+                        }
+                        None => {
+                            return Err(io::Error::new(
+                                io::ErrorKind::Other,
+                                "sbsign terminated by signal",
+                            ))
+                        }
+                    }
+                }
+            }
+            Err(err) => return Err(err),
+        }
+
+        println!(" done");
+    }
+
+    Ok(())
 }
