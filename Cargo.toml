@@ -1,0 +1,15 @@
+[package]
+name = "sigen"
+description = "Creates standalone EFI executables from Linux kernel images"
+version = "1.0.0"
+authors = ["Joaquim Monteiro <joaquim.monteiro@protonmail.com>"]
+edition = "2018"
+
+[profile.release]
+codegen-units = 1
+lto = true
+
+[dependencies]
+paw = "1"
+structopt = { version = "0.3", features = ["paw"] }
+tempfile = "3"
