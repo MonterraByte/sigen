@@ -31,6 +31,16 @@ To build, run `cargo build --release`. The resulting binary will be located at `
         -o, --output <output>       Path to the output file
         -s, --sign <sign> <sign>    Path to the .key and .crt files (in this order) to sign the executable with
 
+# Example
+
+    sigen -c /boot/cmdline -k /boot/vmlinuz-linux -i /boot/amd-ucode.img -i /boot/initramfs-linux.img -o /boot/efi/linux-signed.efi -s /etc/efi-keys/db.key /etc/efi-keys/db.crt -f
+
+# Automation
+
+To automatically regenerate the EFI executable after each kernel update, you can, for example, use systemd path triggers.
+
+The `sigen.service.example` and `sigen.path.example` files are examples on how to implement this.
+
 ---
 
 Copyright © 2019 Joaquim Monteiro

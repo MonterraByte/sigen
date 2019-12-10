@@ -1,0 +1,6 @@
+[Unit]
+Description="Standalone Image Generator"
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/sigen -c /boot/cmdline -k /boot/vmlinuz-linux -i /boot/amd-ucode.img -i /boot/initramfs-linux.img -o /boot/efi/linux-signed.efi -s /etc/efi-keys/db.key /etc/efi-keys/db.crt -f

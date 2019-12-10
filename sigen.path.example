@@ -1,0 +1,9 @@
+[Unit]
+Description="Trigger for sigen"
+
+[Path]
+PathChanged=/boot/initramfs-linux.img
+Unit=sigen.service
+
+[Install]
+WantedBy=multi-user.target
