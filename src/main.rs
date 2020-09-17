@@ -1,4 +1,4 @@
-// Copyright © 2019 Joaquim Monteiro
+// Copyright © 2019-2020 Joaquim Monteiro
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -23,12 +23,6 @@ use std::process::Command;
 use structopt::StructOpt;
 use tempfile::NamedTempFile;
 
-#[cfg(target_arch = "x86_64")]
-const STUB_PATH: &str = "/usr/lib/systemd/boot/efi/linuxx64.efi.stub";
-
-#[cfg(target_arch = "x86")]
-const STUB_PATH: &str = "/usr/lib/systemd/boot/efi/linuxia32.efi.stub";
-
 macro_rules! os {
     ($s:tt) => {
         std::ffi::OsStr::new($s)
@@ -50,6 +44,26 @@ struct Args {
     /// Path to the initramfs file(s) to include
     #[structopt(short, long)]
     initrd: Vec<PathBuf>,
+    /// Path to the systemd-boot stub file
+    #[cfg(target_arch = "aarch64")]
+    #[structopt(short = "S", long, default_value = "/usr/lib/systemd/boot/efi/linuxaa64.efi.stub")]
+    stub: PathBuf,
+    /// Path to the systemd-boot stub file
+    #[cfg(target_arch = "arm")]
+    #[structopt(short = "S", long, default_value = "/usr/lib/systemd/boot/efi/linuxarm.efi.stub")]
+    stub: PathBuf,
+    /// Path to the systemd-boot stub file
+    #[cfg(target_arch = "x86")]
+    #[structopt(short = "S", long, default_value = "/usr/lib/systemd/boot/efi/linuxia32.efi.stub")]
+    stub: PathBuf,
+    /// Path to the systemd-boot stub file
+    #[cfg(target_arch = "x86_64")]
+    #[structopt(short = "S", long, default_value = "/usr/lib/systemd/boot/efi/linuxx64.efi.stub")]
+    stub: PathBuf,
+    /// Path to the systemd-boot stub file
+    #[cfg(not(any(target_arch = "arm", target_arch = "aarch64", target_arch = "x86", target_arch = "x86_64")))]
+    #[structopt(short = "S", long)]
+    stub: PathBuf,
     /// Make a backup of the previous output if it exists
     #[structopt(short, long)]
     backup: Option<PathBuf>,
@@ -65,10 +79,10 @@ struct Args {
 fn main(args: Args) -> io::Result<()> {
     println!("sigen {}", option_env!("CARGO_PKG_VERSION").unwrap_or(""));
 
-    if !PathBuf::from(STUB_PATH).is_file() {
+    if !args.stub.is_file() {
         return Err(io::Error::new(
             io::ErrorKind::NotFound,
-            format!("Failed to find stub {}", STUB_PATH),
+            format!("Failed to find stub {}", args.stub.display()),
         ));
     }
 
@@ -193,7 +207,7 @@ fn main(args: Args) -> io::Result<()> {
         os!("--change-section-vma"),
         os!(".initrd=0x3000000"),
 
-        os!(STUB_PATH),
+        args.stub.as_os_str(),
         args.output.as_os_str(),
     ]);
 

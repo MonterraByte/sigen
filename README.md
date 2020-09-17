@@ -30,6 +30,7 @@ To build, run `cargo build --release`. The resulting binary will be located at `
         -k, --kernel <kernel>       Path to the kernel image
         -o, --output <output>       Path to the output file
         -s, --sign <sign> <sign>    Path to the .key and .crt files (in this order) to sign the executable with
+        -S, --stub <stub>           Path to the systemd-boot stub file
 
 # Example
 
@@ -43,7 +44,7 @@ The `sigen.service.example` and `sigen.path.example` files are examples on how t
 
 ---
 
-Copyright © 2019 Joaquim Monteiro
+Copyright © 2019-2020 Joaquim Monteiro
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
