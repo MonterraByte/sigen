@@ -2,6 +2,10 @@
 
 This utility automates the process of creating self-contained EFI executables for the Linux kernel using systemd-boot's EFI stub.
 
+## WARNING: This software is deprecated.
+
+Consider using [ukify](https://www.freedesktop.org/software/systemd/man/ukify.html), [dracut](https://github.com/dracutdevs/dracut) or [mkinitcpio](https://wiki.archlinux.org/title/Mkinitcpio) instead. See [here](https://wiki.archlinux.org/title/Unified_kernel_image#Preparing_a_unified_kernel_image) for instructions.
+
 # Installation
 
 Arch Linux users can use the [AUR package](https://aur.archlinux.org/packages/sigen).
