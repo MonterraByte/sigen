@@ -15,7 +15,7 @@
 
 use std::ffi::OsString;
 use std::fs::{self, File};
-use std::io::{self, Write};
+use std::io::{self, IsTerminal, Write};
 use std::iter::Iterator;
 use std::path::PathBuf;
 use std::process::Command;
@@ -29,8 +29,11 @@ macro_rules! os {
     };
 }
 
+/// Creates standalone EFI executables from Linux kernel images
+///
+/// WARNING: This software is deprecated. Consider using ukify, dracut or mkinitcpio instead.
 #[derive(StructOpt)]
-#[structopt(about, author)]
+#[structopt(author)]
 struct Args {
     /// Path to the kernel image
     #[structopt(short, long)]
@@ -78,6 +81,12 @@ struct Args {
 #[paw::main]
 fn main(args: Args) -> io::Result<()> {
     println!("sigen {}", option_env!("CARGO_PKG_VERSION").unwrap_or(""));
+    if io::stdout().is_terminal() {
+        print!("\x1b[31;1mWARNING: \x1b[0m");
+    } else {
+        print!("WARNING: ");
+    }
+    println!("This software is deprecated. Consider using ukify, dracut or mkinitcpio instead.");
 
     if !args.stub.is_file() {
         return Err(io::Error::new(
